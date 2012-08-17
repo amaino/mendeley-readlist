@@ -337,8 +337,7 @@ class MendeleyClient(object):
         verifier = raw_input('Enter verification code: ')
         self.set_access_token(self.verify_auth(request_token, verifier))
 
-
-def create_client(config_file="config.json", keys_file="mendeley_api_keys.pkl", account_name="test_account"):
+def create_client(config_file="config.json", keys_file=None, account_name="test_account"):
     # Load the configuration file
     config = MendeleyClientConfig(config_file)
     if not config.is_valid():
@@ -349,6 +348,10 @@ def create_client(config_file="config.json", keys_file="mendeley_api_keys.pkl", 
     host = "api.mendeley.com"
     if hasattr(config, "host"):
         host = config.host
+
+    if not keys_file:
+        keys_file = "keys_%s.pkl"%host
+
     client = MendeleyClient(config.api_key, config.api_secret, {"host":host})
     tokens_store = MendeleyTokensStore(keys_file)    
  
@@ -361,4 +364,3 @@ def create_client(config_file="config.json", keys_file="mendeley_api_keys.pkl", 
     else:
         client.set_access_token(access_token)    
     return client
-
