@@ -7,86 +7,84 @@ parent_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),"..")
 os.sys.path.insert(0, parent_dir) 
 from synced_client import *
 
-debug = True 
+
+
+class TestEnv:
+    sclient = None
+    debug = True 
+    log_file = open("test-sync.log","w")
 
 class TestDocumentsSyncing(unittest.TestCase):
 
-    def log(self, message):
-        if debug:
-            self.log_file.write("\n#%s\n"%message)
-            self.log_file.write("#"+"-"*len(message)+"\n\n")
-            self.sclient.dump_status(self.log_file)
+    def log_status(self, message):
+        if TestEnv.debug:
+            TestEnv.log_file.write("\n#%s\n"%message)
+            TestEnv.log_file.write("#"+"-"*len(message)+"\n\n")
+            TestEnv.sclient.dump_status(TestEnv.log_file)
 
     def clear_library(self):
-        for doc in self.sclient.client.library()["document_ids"]:
-            self.sclient.client.delete_library_document(doc)
+        for doc in TestEnv.sclient.client.library()["document_ids"]:
+            TestEnv.sclient.client.delete_library_document(doc)
 
     def seed_library(self, count):
         ids = []
         for i in range(count):
-            response = self.sclient.client.create_document(document={"type":"Book", "title":"Title %d"%i})
+            response = TestEnv.sclient.client.create_document(document={"type":"Book", "title":"Title %d"%i})
             ids.append(response["document_id"])
         self.assertEqual(len(ids), count)
         return ids
 
     def document_exists(self, document_id):
-        return "error" not in self.sclient.client.document_details(document_id)
+        return "error" not in TestEnv.sclient.client.document_details(document_id)
       
     def setUp(self):
-        self.sclient = DummySyncedClient("../config_sync.json")
         self.clear_library()
-        self.log_file = open("/tmp/log.txt","w")
-        
-    def tearDown(self):
-        pass
 
-    @skip
     def test_fetch(self):
         count = 5
         ids = self.seed_library(count)
         
         # sync, should have count documents with matching ids
-        self.sclient.sync()
-        self.assertEqual(len(self.sclient.documents), count)
-        self.assertEqual(sorted(ids), sorted(self.sclient.documents.keys()))
+        TestEnv.sclient.sync()
+        self.assertEqual(len(TestEnv.sclient.documents), count)
+        self.assertEqual(sorted(ids), sorted(TestEnv.sclient.documents.keys()))
 
         # the status of all documents should be synced
-        for document in self.sclient.documents.values():
+        for document in TestEnv.sclient.documents.values():
             self.assertTrue(document.is_synced())
 
-    @skip
     def test_local_delete(self):
         count = 5
         ids = self.seed_library(count)
-        self.sclient.sync()
+        TestEnv.sclient.sync()
 
         # locally delete 1 document
         deletion_id = ids[count/2]
-        local_document = self.sclient.documents[deletion_id]
+        local_document = TestEnv.sclient.documents[deletion_id]
         local_document.delete()
         # the status of the document should be deleted, the count
         # should stay the same until synced
         self.assertTrue(local_document.is_deleted())
-        self.assertEqual(len(self.sclient.documents), count)
+        self.assertEqual(len(TestEnv.sclient.documents), count)
         
         # check that the status of the documents are correct
-        for docid, document in self.sclient.documents.items():
+        for docid, document in TestEnv.sclient.documents.items():
             if docid == deletion_id:
                 self.assertTrue(document.is_deleted())
             else:
                 self.assertTrue(document.is_synced())
-        self.log("After local delete")
+        self.log_status("After local delete")
 
         # sync the deletion
-        self.sclient.sync()
-        self.log("After sync")
+        TestEnv.sclient.sync()
+        self.log_status("After sync")
         
         # make sure the document doesn't exist anymore 
-        self.assertEqual(len(self.sclient.documents), count-1)
-        self.assertTrue(deletion_id not in self.sclient.documents.keys())
+        self.assertEqual(len(TestEnv.sclient.documents), count-1)
+        self.assertTrue(deletion_id not in TestEnv.sclient.documents.keys())
 
         # make sure the other documents are unaffected
-        for document in self.sclient.documents.values():
+        for document in TestEnv.sclient.documents.values():
             self.assertTrue(document.is_synced())
             self.assertTrue(document.id() in ids)
             self.assertTrue(document.id() != deletion_id)
@@ -98,52 +96,46 @@ class TestDocumentsSyncing(unittest.TestCase):
             else:
                 self.assertTrue(self.document_exists(doc_id))
         
-    @skip
     def test_server_delete(self):
         count = 5 
         ids = self.seed_library(count)
-        self.sclient.sync()
+        TestEnv.sclient.sync()
 
         # delete one doc on the server
-        self.sclient.client.delete_library_document(ids[0])
+        TestEnv.sclient.client.delete_library_document(ids[0])
         self.assertFalse(self.document_exists(ids[0]))
 
-        self.sclient.sync()
-        self.log("After sync")
-        self.assertEqual(len(self.sclient.documents), count-1)
-        self.assertTrue(ids[0] not in self.sclient.documents.keys())
+        TestEnv.sclient.sync()
+        self.log_status("After sync")
+        self.assertEqual(len(TestEnv.sclient.documents), count-1)
+        self.assertTrue(ids[0] not in TestEnv.sclient.documents.keys())
 
         for doc_id in ids[1:]:
-            self.assertTrue(doc_id in self.sclient.documents.keys())
-            self.assertTrue(self.sclient.documents[doc_id].is_synced())
+            self.assertTrue(doc_id in TestEnv.sclient.documents.keys())
+            self.assertTrue(TestEnv.sclient.documents[doc_id].is_synced())
         
 
-    # @skip            
     # def test_nop(self):
     #     pass
 
-    # @skip            
     # def test_local_update_remote_delete(self):
     #     pass
 
-    # @skip            
     # def test_local_update_remote_update_conflict(self):
     #     pass
 
-    # @skip            
     def test_local_update_remote_update_no_conflict(self):
         pass
 
-    @skip            
     def test_local_update(self):
         new_title = "updated_title"
 
         count = 5 
         ids = self.seed_library(count)
-        self.sclient.sync()     
+        TestEnv.sclient.sync()     
 
         # change the title of one document
-        local_document = self.sclient.documents[ids[0]]
+        local_document = TestEnv.sclient.documents[ids[0]]
         local_document.update({"title":new_title})
 
         original_version = local_document.version()
@@ -151,56 +143,63 @@ class TestDocumentsSyncing(unittest.TestCase):
         # the document should be marked as modified
         self.assertTrue(local_document.is_modified())
         for doc_id in ids[1:]:
-            self.assertTrue(self.sclient.documents[doc_id].is_synced())
+            self.assertTrue(TestEnv.sclient.documents[doc_id].is_synced())
         
-        self.log("Before sync")
-        self.sclient.sync()
-        self.log("After sync")
+        self.log_status("Before sync")
+        TestEnv.sclient.sync()
+        self.log_status("After sync")
 
         # all documents should be synced now
         for doc_id in ids:
-            self.assertTrue(self.sclient.documents[doc_id].is_synced())
+            self.assertTrue(TestEnv.sclient.documents[doc_id].is_synced())
             self.assertTrue(self.document_exists(doc_id))
 
         self.assertEqual(local_document.object.title, new_title)
         self.assertTrue(local_document.version() > original_version)
         
-        details = self.sclient.client.document_details(ids[0])
+        details = TestEnv.sclient.client.document_details(ids[0])
         self.assertEqual(details["title"], new_title)
         self.assertEqual(details["version"], local_document.version())
         
-
-    @skip            
     def test_remote_update(self):
         new_title = "updated_title"
 
         count = 5 
         ids = self.seed_library(count)
-        self.sclient.sync()        
+        TestEnv.sclient.sync()        
         
-        local_document = self.sclient.documents[ids[0]]
-        original_version = self.sclient.documents[ids[0]].version()
+        local_document = TestEnv.sclient.documents[ids[0]]
+        original_version = TestEnv.sclient.documents[ids[0]].version()
 
         # update the title of a document on the server
-        response = self.sclient.client.update_document(ids[0], document={"title":new_title})
+        response = TestEnv.sclient.client.update_document(ids[0], document={"title":new_title})
         self.assertTrue("error" not in response)
 
         # make sure the title was updated on the server
-        details = self.sclient.client.document_details(ids[0])
+        details = TestEnv.sclient.client.document_details(ids[0])
         self.assertEqual(details["title"], new_title)  
       
-        self.sclient.sync()
+        TestEnv.sclient.sync()
 
         # all documents should be synced
         for doc_id in ids:
-            self.assertTrue(self.sclient.documents[doc_id].is_synced())
+            self.assertTrue(TestEnv.sclient.documents[doc_id].is_synced())
             self.assertTrue(self.document_exists(doc_id))       
 
         self.assertEqual(local_document.object.title, new_title)
         self.assertTrue(local_document.version() > original_version)            
-        
-        
 
+def main(config_file):
+    sclient = DummySyncedClient(config_file)
+
+    # verify that the version number is available on this server before running all the tests
+    document = TemporaryDocument(sclient.client).document()
+    if not "version" in document:
+        print "The server doesn't support functionalities required by this test yet"
+        sys.exit(1)
+
+    TestEnv.sclient = sclient
+    unittest.main()    
 
 if __name__ == "__main__":
-    unittest.main()
+    main(get_config_file())
