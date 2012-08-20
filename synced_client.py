@@ -77,15 +77,6 @@ class SyncedObject:
 
     def delete(self):
         self.status = SyncStatus.Deleted
-
-    #####
-    def local_delete(self):
-        self.status = SyncStatus.Deleted
-        
-    def local_update(self, change):
-        self.status = self.Modified
-        self.changes.append(obj)
-        
         
 class SyncedFolder(SyncedObject):
     pass
