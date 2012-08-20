@@ -103,7 +103,6 @@ class TestDocumentsSyncing(unittest.TestCase):
             else:
                 self.assertTrue(self.document_exists(doc_id))
                 
-    
     def test_server_delete(self):
         count = 5 
         ids = TestEnv.seed_library(count)
@@ -213,7 +212,6 @@ class TestDocumentsSyncing(unittest.TestCase):
         self.assertEqual(local_document.object.title, new_remote_title)
         self.assertEqual(local_document.object.year, new_local_year)
 
-    
     def test_local_update_remote_update_conflict(self):
         # update the same field locally and remotely to force a conflict
         new_remote_title = "updated_remote_title"
@@ -246,7 +244,6 @@ class TestDocumentsSyncing(unittest.TestCase):
         self.assertTrue(local_document.is_synced())
         self.assertEqual(local_document.object.title, new_local_title)
 
-    
     def test_local_update(self):
         new_title = "updated_title"
 
@@ -282,7 +279,6 @@ class TestDocumentsSyncing(unittest.TestCase):
         self.assertEqual(details["title"], new_title)
         self.assertEqual(details["version"], local_document.version())
         
-    
     def test_remote_update(self):
         new_title = "updated_title"
 

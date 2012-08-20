@@ -150,22 +150,23 @@ class SimpleConflictResolver(ConflictResolver):
         assert isinstance(remote_document, SyncedDocument)
         assert isinstance(local_document, SyncedDocument)
 
-        # generate the list of changes on the remote since the last sync
-        remote_changes = {}
-        for key in vars(remote_document.object):
-            if hasattr(local_document.object, key) and \
-                    getattr(remote_document.object, key) != getattr(local_document.object, key):
-                remote_changes[key] = getattr(remote_document.object, key)
-
         local_changes = local_document.changes
-        for key, remote_value in remote_changes.items():
-            # apply the remote change
-            setattr(local_document.object, key, remote_value)
 
-            if key not in local_changes:
-                # no conflict, no need to resolve anything
-                pass
-            else:
+        for key in vars(remote_document.object):
+            remote_value = getattr(remote_document.object, key)
+            if hasattr(local_document.object, key):
+                local_value = getattr(local_document.object, key)
+                if local_value == remote_value:
+                    # nothing changed
+                    continue
+
+                # apply the remote change
+                setattr(local_document.object, key, remote_value)
+
+                if key not in local_changes:
+                    # no conflict, no need to resolve anything
+                    continue
+                
                 # the local and remote documents have modified the same field
                 keep_remote_version = self.resolve_conflict(key, local_changes[key], remote_value)
 
@@ -177,8 +178,8 @@ class SimpleConflictResolver(ConflictResolver):
                     # change to the remote in sync_documents
                     pass
 
-        # the local_document now is in sync with the remote_document
-        local_document.object.version = remote_document.version()
+        # the local_document data now is in sync with the remote_document
+        assert local_document.version() == remote_document.version()
 
         # if no local changes are left, the document isn't modified anymore
         if len(local_changes) == 0:
