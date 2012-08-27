@@ -57,6 +57,7 @@ import pickle
 import httplib
 import json
 import urllib
+import sys
 
 import apidefinitions
 
@@ -202,7 +203,7 @@ class MendeleyRemoteMethod(object):
             pass
 
         if mime == 'application/json':
-	    # HTTP Status 204 means 'No Content' which json.loads cannot deal with
+            # HTTP Status 204 means 'No Content' which json.loads cannot deal with
             if status == 204:
                 data = ''
             else:

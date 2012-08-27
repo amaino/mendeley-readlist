@@ -1,4 +1,6 @@
 {
-	"api_key" : "<change me>",
-	"api_secret" : "<change me>"
+	"api_key" : "4b06a3a9a7b2c1cb8ca97ab19d3ccbc20503753c9",
+	"api_secret" : "e94623317f7f67609b9765e41d9d0a76",
+	"mendeley_library" : "/Users/marcuni/Dropbox/Mendeley Artiklar",
+	"reading_list" : "/Users/marcuni/Dropbox/Reading List"
 }
